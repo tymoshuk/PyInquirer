@@ -30,9 +30,10 @@ if PY3:
 # custom control based on TokenListControl
 
 class InquirerControl(TokenListControl):
-    def __init__(self, choices, **kwargs):
+    def __init__(self, choices, resposne_type, **kwargs):
         self.pointer_index = 0
         self.answered = False
+        self.response_type = resposne_type
         self._init_choices(choices)
         super(InquirerControl, self).__init__(self._get_choice_tokens,
                                               **kwargs)
@@ -110,8 +111,9 @@ def question(message, **kwargs):
 
     # TODO style defaults on detail level
     style = kwargs.pop('style', default_style)
+    response_type = kwargs.pop('response_type', 'label')
 
-    ic = InquirerControl(choices)
+    ic = InquirerControl(choices, response_type)
 
     def get_prompt_tokens(cli):
         tokens = []
@@ -156,7 +158,10 @@ def question(message, **kwargs):
     @manager.registry.add_binding(Keys.Enter, eager=True)
     def set_answer(event):
         ic.answered = True
-        event.cli.set_return_value(ic.get_selected_value())
+        if ic.response_type == 'label':
+            event.cli.set_return_value(ic.get_selected_value())
+        else:
+            event.cli.set_return_value(ic.pointer_index)
 
     return Application(
         layout=layout,
